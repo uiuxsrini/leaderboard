@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quizzania Dashboard</title>
+    <!-- Add Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <style>
+        /* ... existing styles ... */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .leading-team {
+            animation: pulse 2s infinite;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        #teamForm, #scoreForm {
+            margin-bottom: 20px;
+        }
+        #teamList {
+            margin-bottom: 20px;
+        }
+        .team-tag {
+            display: inline-block;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 20px;
+            padding: 5px 15px;
+            margin: 0 5px 5px 0;
+            font-size: 0.9rem;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            text-align: center;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .card {
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        #leaderboard {
+            position: relative;
+            min-height: 300px; /* Adjust as needed */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #leaderboard .card {
+            position: absolute;
+            width: 50%;
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+        .leading-team {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            z-index: 1;
+        }
+        #leaderboard .card-body {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #leaderboard .team-name {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+        #leaderboard .team-score {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        main {
+            flex: 1 0 auto;
+        }
+        footer {
+            flex-shrink: 0;
+            background-color: #f8f9fa;
+            padding: 20px 0;
+            margin-top: 40px;
+        }
+        header, footer {
+            flex-shrink: 0;
+            background-color: #f8f9fa;
+            padding: 20px 0;
+        }
+        @media (max-width: 767px) {
+            .col-md-6 {
+                margin-bottom: 30px;
+            }
+        }
+        header {
+            background-color: #f8f9fa;
+            padding: 20px 0;
+        }
+        .navbar-nav .nav-link {
+            color: #007bff;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            transition: all 0.3s ease;
+        }
+        .navbar-nav .nav-link:hover {
+            color: #0056b3;
+            background-color: rgba(0, 123, 255, 0.1);
+            border-radius: 5px;
+        }
+        .navbar-nav .nav-link.active {
+            color: #ffffff;
+            background-color: #007bff;
+            border-radius: 5px;
+        }
+        .navbar-nav .nav-link.active:hover {
+            background-color: #0056b3;
+        }
+        .btn-group {
+            margin-top: 20px;
+        }
+        .logo-img {
+            max-height: 80px;
+            margin-right: 15px;
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.5));
+        }
+        .logo-text {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-decoration: none;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <header class="bg-light">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-4 col-md-6 mb-4 mb-md-0">
+                    <a href="#" class="navbar-brand">
+                        <img src="images/logo.png" alt="Quizzania Logo" class="logo-img">
+                        <h1 class="mb-0 text-center">Quizzania Dashboard</h1>
+                    </a>
+                </div>
+                <div class="col-lg-8 col-md-6">
+                    <nav class="navbar navbar-expand-lg navbar-light">
+                        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                            <span class="navbar-toggler-icon"></span>
+                        </button>
+                        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                            <ul class="navbar-nav">
+                               
+                                <li class="nav-item">
+                                    <a class="nav-link active" href="leaderboard.html" target="_blank" id="leaderboardLink">Audiance Leaderboard</a>
+                                </li>
+                                
+                            </ul>
+                        </div>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mt-4 mb-4">        
+        <div class="row">
+            <!-- Left Section -->
+            <div class="col-md-6">
+                <h3 class="text-center mb-4">Team Management</h3>
+                <hr>
+                <form id="teamForm" class="mb-4">
+                    <div class="input-group mb-4">
+                        <input type="text" id="teamName" class="form-control" placeholder="Team Name" required>
+                        <button type="button" id="addTeamBtn" class="btn btn-primary">Add Team</button>
+                    </div>
+                </form>
+
+                <form id="scoreForm" class="mb-4" style="display: none;">
+                    <div class="input-group">
+                        <select id="teamSelect" class="form-select"></select>
+                        <input type="number" id="scoreInput" class="form-control" placeholder="Score" required>
+                        <button type="submit" class="btn btn-success">Update Score</button>
+                    </div>
+                </form>
+                <div id="teamList" class="mb-4"></div>
+                <hr>
+                <div class="d-grid gap-2 d-md-block">
+                    <button id="resetButton" class="btn btn-danger mb-2">Reset</button>
+                    <button id="declareWinnerBtn" class="btn btn-primary mb-2">Declare Winner</button>
+                  </div>
+
+            </div>
+
+            <!-- Right Section -->
+            <div class="col-md-6">
+                <h3 class="text-center mb-4">Leaderboard</h3>
+                <hr>
+                <div id="leaderboard" class="mb-4"></div>
+            </div>
+        </div>
+
+        <div id="winnerModal" class="modal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Congratulations!</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p id="winnerMessage"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Bootstrap JS and Popper.js -->
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+
+        <script>
+            class Leaderboard {
+                constructor() {
+                    this.teams = JSON.parse(localStorage.getItem('leaderboardData')) || [];
+                }
+
+                addTeam(name) {
+                    this.teams.push({ name, score: 0 });
+                    this.sortTeams();
+                    this.saveToLocalStorage();
+                }
+
+                updateScore(teamName, score) {
+                    const team = this.teams.find(t => t.name === teamName);
+                    if (team) {
+                        team.score += score;
+                        this.sortTeams();
+                        this.saveToLocalStorage();
+                    }
+                }
+
+                sortTeams() {
+                    this.teams.sort((a, b) => b.score - a.score);
+                }
+
+                getTopTeams() {
+                    return this.teams;
+                }
+
+                saveToLocalStorage() {
+                    localStorage.setItem('leaderboardData', JSON.stringify(this.teams));
+                }
+
+                reset() {
+                    this.teams = [];
+                    this.saveToLocalStorage();
+                }
+            }
+
+            const leaderboard = new Leaderboard();
+            const teamForm = document.getElementById('teamForm');
+            const teamList = document.getElementById('teamList');
+            const scoreForm = document.getElementById('scoreForm');
+            const teamSelect = document.getElementById('teamSelect');
+            const leaderboardElement = document.getElementById('leaderboard');
+            const declareWinnerBtn = document.getElementById('declareWinnerBtn');
+            const winnerModalElement = document.getElementById('winnerModal');
+            const winnerMessage = document.getElementById('winnerMessage');
+
+            document.addEventListener('DOMContentLoaded', function() {
+                const teamForm = document.getElementById('teamForm');
+                const teamNameInput = document.getElementById('teamName');
+                const addTeamBtn = document.getElementById('addTeamBtn');
+                const teamList = document.getElementById('teamList');
+                const scoreForm = document.getElementById('scoreForm');
+                const teamSelect = document.getElementById('teamSelect');
+                const leaderboardElement = document.getElementById('leaderboard');
+                const declareWinnerBtn = document.getElementById('declareWinnerBtn');
+
+                function addTeam() {
+                    const teamName = teamNameInput.value.trim();
+                    if (teamName) {
+                        leaderboard.addTeam(teamName);
+                        updateTeamList();
+                        updateLeaderboardDisplay();
+                        teamNameInput.value = '';
+                    }
+                }
+
+                addTeamBtn.addEventListener('click', addTeam);
+
+                teamForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    addTeam();
+                });
+
+                function updateTeamList() {
+                    teamList.innerHTML = '';
+                    teamSelect.innerHTML = '';
+                    leaderboard.getTopTeams().forEach(team => {
+                        const teamTag = document.createElement('span');
+                        teamTag.className = 'team-tag';
+                        teamTag.textContent = team.name;
+                        teamList.appendChild(teamTag);
+
+                        const option = document.createElement('option');
+                        option.value = team.name;
+                        option.textContent = team.name;
+                        teamSelect.appendChild(option);
+                    });
+                    scoreForm.style.display = leaderboard.teams.length > 0 ? 'block' : 'none';
+                    declareWinnerBtn.style.display = leaderboard.teams.length > 0 ? 'block' : 'none';
+                }
+
+                function updateLeaderboardDisplay() {
+                    const oldOrder = Array.from(leaderboardElement.children).map(card => card.dataset.teamName);
+                    const newOrder = leaderboard.getTopTeams();
+                    const cardHeight = leaderboardElement.children.length > 0 ? leaderboardElement.children[0].offsetHeight : 100;
+
+                    // Update existing cards and create new ones
+                    newOrder.forEach((team, newIndex) => {
+                        let card = Array.from(leaderboardElement.children).find(c => c.dataset.teamName === team.name);
+                        
+                        if (!card) {
+                            card = document.createElement('div');
+                            card.className = 'card mb-2';
+                            card.style.opacity = '0';
+                            card.style.transform = 'translateY(50px)';
+                            leaderboardElement.appendChild(card);
+                        }
+                        
+                        card.dataset.teamName = team.name;
+                        card.innerHTML = `
+                            <div class="card-body">
+                                <span class="team-name">${newIndex + 1}. ${team.name}</span>
+                                <span class="team-score">${team.score}</span>
+                            </div>
+                        `;
+                        card.classList.toggle('leading-team', newIndex === 0);
+                        
+                        const oldIndex = oldOrder.indexOf(team.name);
+                        if (oldIndex !== -1) {
+                            if (oldIndex < newIndex) {
+                                card.style.transform = 'translateY(-30px)';
+                            } else if (oldIndex > newIndex) {
+                                card.style.transform = 'translateY(30px)';
+                            }
+                        }
+                    });
+
+                    // Remove cards for teams no longer in the leaderboard
+                    Array.from(leaderboardElement.children).forEach(card => {
+                        if (!newOrder.some(team => team.name === card.dataset.teamName)) {
+                            card.style.opacity = '0';
+                            card.style.transform = 'translateY(50px)';
+                            setTimeout(() => card.remove(), 500);
+                        }
+                    });
+
+                    // Trigger reflow
+                    leaderboardElement.offsetHeight;
+
+                    // Animate to new positions
+                    setTimeout(() => {
+                        newOrder.forEach((team, index) => {
+                            const card = Array.from(leaderboardElement.children).find(c => c.dataset.teamName === team.name);
+                            if (card) {
+                                card.style.transition = 'all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55)';
+                                card.style.top = `${index * (cardHeight + 10)}px`;
+                                card.style.opacity = '1';
+                                card.style.transform = 'translateY(0)';
+                                card.style.zIndex = newOrder.length - index; // Ensure higher cards appear above lower ones
+                            }
+                        });
+                    }, 50);
+
+                    // Update leaderboard height
+                    leaderboardElement.style.height = `${newOrder.length * (cardHeight + 10)}px`;
+
+                    // After updating the leaderboard, dispatch a custom event
+                    window.dispatchEvent(new Event('leaderboardUpdated'));
+                }
+
+                scoreForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const teamName = teamSelect.value;
+                    const score = parseInt(document.getElementById('scoreInput').value, 10);
+                    leaderboard.updateScore(teamName, score);
+                    updateLeaderboardDisplay();
+                    scoreForm.reset();
+                });
+
+                let leaderboardWindow;
+
+                document.getElementById('leaderboardLink').addEventListener('click', function(e) {
+                    e.preventDefault();
+                    leaderboardWindow = window.open('leaderboard.html', 'LeaderboardWindow');
+                });
+
+                document.getElementById('declareWinnerBtn').addEventListener('click', function() {
+                    const winner = leaderboard.getTopTeams()[0];
+                    if (winner) {
+                        if (leaderboardWindow && !leaderboardWindow.closed) {
+                            leaderboardWindow.postMessage({ type: 'declareWinner', winner: winner }, '*');
+                        } else {
+                            alert('Please open the Leaderboard tab first.');
+                        }
+                    } else {
+                        alert('No teams available to declare a winner.');
+                    }
+                });
+
+                // Add this new function
+                function resetLeaderboard() {
+                    leaderboard.reset();
+                    updateTeamList();
+                    updateLeaderboardDisplay();
+                    teamForm.reset();
+                    scoreForm.reset();
+                    scoreForm.style.display = 'none';
+                    declareWinnerBtn.style.display = 'none';
+                }
+
+                // Add this event listener
+                document.getElementById('resetButton').addEventListener('click', function() {
+                    if (confirm('Are you sure you want to reset the leaderboard? This action cannot be undone.')) {
+                        resetLeaderboard();
+                    }
+                });
+
+                // At the end of the script
+                const winnerModal = new bootstrap.Modal(winnerModalElement);
+
+                document.getElementById('aboutLink').addEventListener('click', function(e) {
+                    e.preventDefault();
+                    alert('This is a quiz dashboard application. Add participants, update scores, and track progress!');
+                });
+            });
+        </script>
+    </main>
+
+
+</body>
+</html>
+
+
+
+
